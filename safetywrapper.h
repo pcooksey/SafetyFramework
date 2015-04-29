@@ -1,6 +1,8 @@
 #ifndef SAFETYWRAPPER_H
 #define SAFETYWRAPPER_H
 
+/** This is from http://www.stroustrup.com/wrapper.pdf */
+
 #include <iostream>
 #include <ctime>
 using namespace std;
