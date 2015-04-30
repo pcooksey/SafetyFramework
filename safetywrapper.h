@@ -5,6 +5,9 @@
 
 #include <iostream>
 #include <ctime>
+#include <typeinfo>
+#include <assert.h>
+
 using namespace std;
 
 std::clock_t prefix();
@@ -36,13 +39,14 @@ class SafetyWrap
 {
     T*p;
     int* owned;
+    string* name;
     void incr_owned() const { if(owned) ++*owned; }
-    void decr_owned() const { if(owned && --*owned==0) { delete p; delete owned; } }
+    void decr_owned() const { if(owned && --*owned==0) { delete p; delete owned; delete name; } }
 public:
-    SafetyWrap(T& p): p(p), owned(0) { }
-    SafetyWrap(T* p) : p(p), owned(new int(1)) { }
+    SafetyWrap(T& p): p(p), owned(0), name(NULL) { }
+    SafetyWrap(T* p) : p(p), owned(new int(1)), name(NULL) { }
 
-    SafetyWrap(const SafetyWrap& p) :p(p.p), owned(p.owned) { incr_owned(); }
+    SafetyWrap(const SafetyWrap& p) :p(p.p), owned(p.owned), name(p.name) { incr_owned(); }
 
     SafetyWrap& operator=(const SafetyWrap& a)
     {
@@ -50,12 +54,28 @@ public:
         decr_owned();
         p = a.p;
         owned = a.owned;
+        name = a.name;
         return *this;
     }
 
     ~SafetyWrap() { decr_owned(); }
 
-    SuffixWrapper<T> operator->() { std::clock_t start = prefix(); return SuffixWrapper<T>(p, start); }
+    SuffixWrapper<T> operator->() {
+        //You must call like this: class("name")->name();
+        assert(name!=NULL);
+        std::clock_t start = prefix();
+        cout << typeid(p).name() << "::"
+             << *name << endl;
+        delete this->name;
+        return SuffixWrapper<T>(p,start);
+    }
+
+    SafetyWrap<T> operator()(string name)
+    {
+        delete this->name;
+        this->name = new string(name);
+        return *this;
+    }
 
     T* direct() const { return p; }
 };
